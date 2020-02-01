@@ -1,0 +1,38 @@
+{
+  "name": "chat",
+  "version": "1.0.0",
+  "description": "An realtime chat app build with nodejs, redis and socketio",
+  "main": "./src/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --inspect --exec babel-node ./src/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muhammedmirzakilic/chat.git"
+  },
+  "author": "Muhammed Mirza Kilic",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/muhammedmirzakilic/chat/issues"
+  },
+  "homepage": "https://github.com/muhammedmirzakilic/chat#readme",
+  "dependencies": {
+    "body-parser": "*",
+    "cookie-parser": "^1.4.1",
+    "dotenv": "^8.0.0",
+    "ejs": "^2.5.6",
+    "express": "*",
+    "express-ejs-layouts": "^2.5.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/node": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "babel-plugin-transform-inline-environment-variables": "^0.4.3",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "babel-polyfill": "^6.26.0",
+    "nodemon": "^2.0.2"
+  }
+}

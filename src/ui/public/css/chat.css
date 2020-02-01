@@ -1,3 +1,9 @@
+html,
+body {
+    margin: 0;
+    padding: 0
+}
+
 .chat-container {
     height: 500px;
     overflow: auto;
@@ -9,4 +15,27 @@
 .username {
     padding-right: 10px;
     font-weight: bold;
+}
+
+#channels-to-join {
+    flex-direction: column;
+}
+
+.channel-to-join {
+    display: flex;
+    justify-content: space-between;
+}
+
+#joint-channels {
+    padding: 20px;
+    min-height: 20px;
+}
+
+.joint-channel {
+    padding-right: 15px;
+    text-decoration: underline;
+}
+
+.joint-channel.active {
+    color: red;
 }

@@ -1,37 +1,84 @@
 var socket = io();
 var username = getRandomUsername();
-socket.on("message", function(data) {
-  console.log(data);
-  var username = data.username;
-  var message = data.message;
-  var element = `
+var allChannels = [];
+var jointChannels = [];
+var channelMessages = [];
+var activeChannel = "";
+socket.on("message", ({ username, message, channel }) => {
+  console.log("new message");
+  console.log(username, message, channel);
+  let element = getMessageItem(username, message);
+  if (!channelMessages[channel]) channelMessages[channel] = [];
+  channelMessages[channel].push({ username, message });
+  if (activeChannel == channel) $(".chat-container").append(element);
+});
+
+socket.on("jointChannel", jointChannel => {
+  var channel = allChannels.find(item => item.value == jointChannel);
+  var element = `<span class="joint-channel" 
+    data-value="${channel.value}">${channel.name}</span>`;
+  if (jointChannels.length == 0) {
+    activeChannel = channel.value;
+    element = $(element).addClass("active");
+  }
+  $("#joint-channels").append(element);
+  jointChannels.push(channel);
+  activeChannelClickListener();
+});
+
+socket.on("channels", function(channels) {
+  allChannels = channels;
+  channels.forEach(channel => {
+    var element = `
+    <div class="channel-to-join">
+      <span>${channel.name}</span> 
+      <button class="btn btn-primary join-channel-btn" 
+        data-value="${channel.value}">Join</button>
+    </div>`;
+    $("#channels-to-join").append(element);
+  });
+  $(".join-channel-btn").off("click", joinChannelHandler);
+  $(".join-channel-btn").on("click", joinChannelHandler);
+  function joinChannelHandler(e) {
+    var channel = $(this).data("value");
+    console.log(channel);
+    socket.emit("joinChannel", channel);
+  }
+});
+
+function getMessageItem(username, message) {
+  return `
     <div class="message row">
         <div class="username">${username}:</div>
         <div class="message">${message}</div>
     </div>
   `;
-  $(".chat-container").append(element);
-});
+}
+
+function activeChannelClickListener() {
+  $(".joint-channel").off("click", jointChannelClickHandler);
+  $(".joint-channel").on("click", jointChannelClickHandler);
+}
+function jointChannelClickHandler(e) {
+  $(".joint-channel").removeClass("active");
+  $(this).addClass("active");
+  activeChannel = $(this).data("value");
+  let chatContainer = $(".chat-container");
+  chatContainer.html("");
+  let activeChannelMessages = channelMessages[activeChannel];
+  if (activeChannelMessages) {
+    activeChannelMessages.forEach(item => {
+      var element = getMessageItem(item.username, item.message);
+      chatContainer.append(element);
+    });
+  }
+}
 
 function sendMessage() {
+  if (!activeChannel) return alert("Join a channel first");
   var message = $("#message").val();
-  var request = {
-    username,
-    message
-  };
-  $.ajax({
-    url: "/chat/sendMessage",
-    type: "POST",
-    data: JSON.stringify(request),
-    dataType: "json",
-    contentType: "application/json",
-    success: function(data, status, xhr) {
-      if (data && data.result) console.log("message sent");
-    },
-    error: function(err) {
-      console.log("error");
-    }
-  });
+  if (!message) return alert("Write a message");
+  socket.emit("send", username, activeChannel, message);
 }
 
 function getRandomUsername() {

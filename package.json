@@ -19,7 +19,7 @@
   "homepage": "https://github.com/muhammedmirzakilic/chat#readme",
   "dependencies": {
     "body-parser": "*",
-    "cookie-parser": "^1.4.1",
+    "cookie-parser": "^1.4.4",
     "dotenv": "^8.0.0",
     "ejs": "^2.5.6",
     "express": "*",

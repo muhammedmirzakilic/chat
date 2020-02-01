@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 const app = express();
 import authRoutes from "./routes/auth";
 import chatRoutes from "./routes/chat";
-import { publishMessage, redis } from "./lib/redis";
+import { publishMessage, redis, chatRoomPrefix } from "./lib/redis";
 
 require("dotenv").config();
 
@@ -44,13 +44,59 @@ app.post("/chat/sendMessage", (req, res) => {
   res.send({ result: true, message: "sent" });
 });
 
-redis.on("message", (channel, message) => {
-  io.emit("message", JSON.parse(message));
-});
+var channels = [
+  {
+    name: "News",
+    value: "news"
+  },
+  {
+    name: "Sport",
+    value: "sport"
+  },
+  {
+    name: "Cinema",
+    value: "cinema"
+  },
+  {
+    name: "Random Things",
+    value: "randomThings"
+  }
+];
+
+const handleMessage = (_, channel, message) => {
+  console.log(channel);
+  channel = channel.replace(chatRoomPrefix, "");
+  console.log(channel);
+  var data = { channel, ...JSON.parse(message) };
+  io.to(channel).emit("message", data);
+  console.log("handleMessage ==> ", channel, message);
+};
+
+redis.on("pmessage", handleMessage);
+
 io.on("connection", function(socket) {
-  console.log("client connected");
-  socket.on("message", function(data) {
-    io.emit("send", data);
+  socket.emit("channels", channels);
+  const handleMessage = (channel, message) => {
+    var data = { channel, ...JSON.parse(message) };
+    socket.to(channel).broadcast.emit("message", data);
+    //socket.to(channel).emit("message", JSON.parse(message));
+    console.log("handleMessage ==> ", channel, message);
+    //socket.emit("message", JSON.parse(message));
+  };
+
+  socket.on("joinChannel", channel => {
+    socket.join(channel);
+    socket.emit("jointChannel", channel);
+    //redis.on("message", handleMessage);
+  });
+
+  socket.on("send", (username, channel, message) => {
+    console.log(username, channel, message);
+    publishMessage(channel, JSON.stringify({ message, username }));
+  });
+
+  socket.on("disconnected", function(data) {
+    redis.off("message", handleMessage);
   });
 });
 

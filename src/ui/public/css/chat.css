@@ -1,0 +1,12 @@
+.chat-container {
+    height: 500px;
+    overflow: auto;
+    border: 1px;
+    border-color: black;
+    border-style: solid;
+}
+
+.username {
+    padding-right: 10px;
+    font-weight: bold;
+}

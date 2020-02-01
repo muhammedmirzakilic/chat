@@ -23,6 +23,7 @@
     "dotenv": "^8.0.0",
     "ejs": "^2.5.6",
     "express": "*",
+    "ioredis": "^4.14.1",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {

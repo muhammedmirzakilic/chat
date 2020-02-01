@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 const app = express();
 import authRoutes from "./routes/auth";
 import chatRoutes from "./routes/chat";
+import { publishMessage, redis } from "./lib/redis";
 
 require("dotenv").config();
 
@@ -39,15 +40,16 @@ app.get("/chat", (req, res) => {
 
 app.post("/chat/sendMessage", (req, res) => {
   var { message, username } = req.body;
-  console.log(message);
-  io.emit("message", { message, username });
+  publishMessage(JSON.stringify({ message, username }));
   res.send({ result: true, message: "sent" });
 });
 
+redis.on("message", (channel, message) => {
+  io.emit("message", JSON.parse(message));
+});
 io.on("connection", function(socket) {
-  // Fire 'send' event for updating Message list in UI
+  console.log("client connected");
   socket.on("message", function(data) {
-    console.log("socket.on(message) ==> " + data);
     io.emit("send", data);
   });
 });

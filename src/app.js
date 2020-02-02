@@ -53,8 +53,8 @@ app.use(
 app.use("/auth", authRoutes);
 app.use("/chat", chatRoutes);
 
-app.get("/", (req, res) => {
-  res.send("Chat App");
+app.get("/", isAuthRequired, (req, res) => {
+  res.redirect("/chat");
 });
 
 app.get("/chat", isAuthRequired, (req, res) => {
@@ -140,7 +140,7 @@ io.use(async (socket, next) => {
   } else {
     next(new Error("Authentication error"));
   }
-}).on("connection", function(socket) {
+}).on("connection", async function(socket) {
   console.log(`Socket connected: ${socket.id}`);
   let { username } = socket.handshake.query;
   if (!users[username]) {
@@ -153,11 +153,6 @@ io.use(async (socket, next) => {
   users[username].sockets.push(socket.id);
   socket.on("connected", function(data) {});
   socket.emit("channels", channels);
-  const handleMessage = (channel, message) => {
-    var data = { channel, ...JSON.parse(message) };
-    socket.to(channel).broadcast.emit("message", data);
-    console.log("handleMessage ==> ", channel, message);
-  };
 
   socket.on("joinChannel", async channel => {
     for (var index = 0; index < users[username].sockets.length; index++) {
@@ -170,6 +165,7 @@ io.use(async (socket, next) => {
       var messages = oldMessages.map(oldMessage => JSON.parse(oldMessage));
       io.to(username).emit("oldMessages", { channel, messages });
     }
+    users[username].jointChannels.push(channel);
   });
 
   socket.on("send", (username, channel, message) => {
@@ -186,13 +182,26 @@ io.use(async (socket, next) => {
       s => s != socket.id
     );
   });
+  console.log("jointChannels ==>", users[username].jointChannels.length);
+  for (let index = 0; index < users[username].jointChannels.length; index++) {
+    const jointChannel = users[username].jointChannels[index];
+    console.log("jointChannel ==> ", jointChannel);
+    socket.emit("jointChannel", jointChannel);
+    var oldMessages = await getOldMessages(jointChannel);
+    if (oldMessages.length > 0) {
+      var messages = oldMessages.map(oldMessage => JSON.parse(oldMessage));
+      io.to(username).emit("oldMessages", { jointChannel, messages });
+    }
+  }
 });
 
 async function isAuthRequired(req, res, next) {
   let { username, sessionToken } = req.session;
-  if (!isSessionValid(sessionToken, username))
+  console.log(username, sessionToken);
+  var isValid = await isSessionValid(sessionToken, username);
+  if (!isValid) {
     return res.redirect("/auth/login");
-  next();
+  } else next();
 }
 
 async function isSessionValid(token, username) {

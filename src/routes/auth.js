@@ -43,7 +43,8 @@ router.post("/register", async (req, res) => {
 
 async function isAllreadyLogged(req, res, next) {
   let { username, sessionToken } = req.session;
-  if (isSessionValid(sessionToken, username)) return res.redirect("/chat");
+  var isValid = await isSessionValid(sessionToken, username);
+  if (isValid) return res.redirect("/chat");
   next();
 }
 async function isSessionValid(token, username) {

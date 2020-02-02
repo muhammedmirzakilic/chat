@@ -33,6 +33,9 @@ socket.on("jointChannel", jointChannel => {
     element = $(element).addClass("active");
   }
   $("#joint-channels").append(element);
+  $(`.join-channel-btn[data-value='${jointChannel}']`)
+    .attr("disabled", true)
+    .text("Joined");
   jointChannels.push(channel);
   activeChannelClickListener();
 });
@@ -53,6 +56,8 @@ socket.on("channels", function(channels) {
   $(".join-channel-btn").on("click", joinChannelHandler);
   function joinChannelHandler(e) {
     var channel = $(this).data("value");
+    $(this).attr("disabled", "true");
+    $(this).text("Joined");
     console.log(channel);
     socket.emit("joinChannel", channel);
   }

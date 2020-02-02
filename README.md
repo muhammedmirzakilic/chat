@@ -1,11 +1,13 @@
-#Chat
+# Chat
 
 Realtime chat application
 
-##Prerequisites
+## Prerequisites
+
 You need to install [node.js](https://nodejs.org) and [redis](https://redis.io) on your machine to be able to run this project
 
-##Installation
+## Installation
+
 Clone project
 
 ```

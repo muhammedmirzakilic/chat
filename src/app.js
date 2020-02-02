@@ -5,8 +5,8 @@ import cookieParser from "cookie-parser";
 const app = express();
 import authRoutes from "./routes/auth";
 import chatRoutes from "./routes/chat";
-import { publishMessage, redis, chatRoomPrefix } from "./lib/redis";
-
+import { publishMessage, redis, chatRoomPrefix, redisStore } from "./lib/redis";
+var session = require("express-session");
 require("dotenv").config();
 
 const socketIO = require("socket.io");
@@ -27,6 +27,20 @@ app.use(
 );
 app.use(cookieParser());
 
+//session
+app.use(
+  session({
+    redisStore,
+    secret: "som3-Seri0us*Key",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      maxAge: process.env.SESSION_TIME_OUT,
+      secure: process.env.ENVIRONMENT == "production"
+    }
+  })
+);
+
 //routers
 app.use("/auth", authRoutes);
 app.use("/chat", chatRoutes);
@@ -34,6 +48,7 @@ app.use("/chat", chatRoutes);
 app.get("/", (req, res) => {
   res.send("Chat App");
 });
+
 app.get("/chat", (req, res) => {
   res.sendFile(path.resolve(__dirname, "ui/views/chat.html"));
 });

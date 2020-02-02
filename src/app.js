@@ -15,7 +15,8 @@ import {
 } from "./lib/redis";
 var session = require("express-session");
 require("dotenv").config();
-
+import "./utils/bannedWords";
+import { filterText } from "./utils/bannedWords";
 const socketIO = require("socket.io");
 const server = express()
   .use(app)
@@ -130,6 +131,7 @@ io.use(async (socket, next) => {
 
   socket.on("send", (username, channel, message) => {
     console.log(username, channel, message);
+    message = filterText(message);
     publishMessage(channel, JSON.stringify({ message, username }));
   });
 

@@ -1,10 +1,10 @@
 import express from "express";
 var router = express.Router();
 import path from "path";
-import { redis, setUser, getUser, setSession } from "../lib/redis";
+import { redis, setUser, getUser, setSession, getSession } from "../lib/redis";
 const uuidv1 = require("uuid/v1");
 
-router.get("/login", (req, res) => {
+router.get("/login", isAllreadyLogged, (req, res) => {
   res.sendFile(path.resolve(__dirname, "../ui/views/login.html"));
 });
 
@@ -26,7 +26,7 @@ router.post("/login", async (req, res) => {
   res.send({ success: true, token });
 });
 
-router.get("/register", (req, res) => {
+router.get("/register", isAllreadyLogged, (req, res) => {
   res.sendFile(path.resolve(__dirname, "../ui/views/register.html"));
 });
 
@@ -41,6 +41,17 @@ router.post("/register", async (req, res) => {
   res.send({ success: true });
 });
 
+async function isAllreadyLogged(req, res, next) {
+  let { username, sessionToken } = req.session;
+  if (isSessionValid(sessionToken, username)) return res.redirect("/chat");
+  next();
+}
+async function isSessionValid(token, username) {
+  if (!token || !username) return false;
+  var redisSessionUsername = await getSession(token);
+  if (!redisSessionUsername || username != redisSessionUsername) return false;
+  return true;
+}
 function generateSessionToken() {
   return uuidv1();
 }

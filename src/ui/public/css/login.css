@@ -1,5 +1,5 @@
 .content {
-  background-color: #c7ecee;
+  background-color: #2081C3;
   width: 100%;
   height: 100vh;
   display: flex;
@@ -9,12 +9,13 @@
 
 .login-wrapper {
   display: flex;
-  background-color: #ecf0f1;
+  background-color: #F7F9F9;
   width: 500px;
-  height: 500px;
+  height: 400px;
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  border-radius: 25px;
 }
 
 .login-form-group {
@@ -23,4 +24,13 @@
   justify-content: center;
   align-items: center;
   display: flex;
+}
+
+.login-button {
+  background-color: #2081C3;
+  padding: 10px;
+}
+
+.login-wrapper input {
+  border-radius: 5px;
 }

@@ -10,11 +10,23 @@ var activeChannel = "";
 socket.on("message", ({ username, message, channel }) => {
   console.log("new message");
   console.log(username, message, channel);
+  handleMessage(username, message, channel);
+});
+
+socket.on("oldMessages", ({ channel, messages }) => {
+  console.log("old messages");
+  console.log(messages);
+  messages.forEach(item => {
+    handleMessage(item.username, item.message, channel);
+  });
+});
+
+function handleMessage(username, message, channel) {
   let element = getMessageItem(username, message);
   if (!channelMessages[channel]) channelMessages[channel] = [];
   channelMessages[channel].push({ username, message });
   if (activeChannel == channel) $(".chat-container").append(element);
-});
+}
 
 socket.on("jointChannel", jointChannel => {
   var channel = allChannels.find(item => item.value == jointChannel);

@@ -10,7 +10,8 @@ import {
   redis,
   chatRoomPrefix,
   redisStore,
-  getSession
+  getSession,
+  getOldMessages
 } from "./lib/redis";
 var session = require("express-session");
 require("dotenv").config();
@@ -107,8 +108,6 @@ io.use(async (socket, next) => {
     next(new Error("Authentication error"));
   }
 }).on("connection", function(socket) {
-  console.log(socket);
-  debugger;
   socket.emit("channels", channels);
   const handleMessage = (channel, message) => {
     var data = { channel, ...JSON.parse(message) };
@@ -118,10 +117,15 @@ io.use(async (socket, next) => {
     //socket.emit("message", JSON.parse(message));
   };
 
-  socket.on("joinChannel", channel => {
+  socket.on("joinChannel", async channel => {
     socket.join(channel);
     socket.emit("jointChannel", channel);
-    //redis.on("message", handleMessage);
+
+    var oldMessages = await getOldMessages(channel);
+    if (oldMessages.length > 0) {
+      var messages = oldMessages.map(oldMessage => JSON.parse(oldMessage));
+      socket.emit("oldMessages", { channel, messages });
+    }
   });
 
   socket.on("send", (username, channel, message) => {

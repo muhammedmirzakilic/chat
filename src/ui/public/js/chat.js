@@ -8,14 +8,10 @@ var jointChannels = [];
 var channelMessages = [];
 var activeChannel = "";
 socket.on("message", ({ username, message, channel }) => {
-  console.log("new message");
-  console.log(username, message, channel);
   handleMessage(username, message, channel);
 });
 
 socket.on("oldMessages", ({ channel, messages }) => {
-  console.log("old messages");
-  console.log(messages);
   messages.forEach(item => {
     handleMessage(item.username, item.message, channel);
   });
@@ -95,6 +91,7 @@ function sendMessage() {
   var message = $("#message").val();
   if (!message) return alert("Write a message");
   socket.emit("send", username, activeChannel, message);
+  $("#message").val("");
 }
 
 function getUsername() {

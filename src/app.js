@@ -83,6 +83,38 @@ var channels = [
   {
     name: "Random Things",
     value: "randomThings"
+  },
+  {
+    name: "Culture",
+    value: "culture"
+  },
+  {
+    name: "Soccer",
+    value: "soccer"
+  },
+  {
+    name: "Travel",
+    value: "travel"
+  },
+  {
+    name: "Science",
+    value: "science"
+  },
+  {
+    name: "Series",
+    value: "series"
+  },
+  {
+    name: "World",
+    value: "world"
+  },
+  {
+    name: "Space",
+    value: "space"
+  },
+  {
+    name: "Basketball",
+    value: "basketball"
   }
 ];
 
@@ -96,7 +128,7 @@ const handleMessage = (_, channel, message) => {
 };
 
 redis.on("pmessage", handleMessage);
-
+var users = [];
 io.use(async (socket, next) => {
   if (socket.handshake.query && socket.handshake.query.token) {
     let { token, username } = socket.handshake.query;
@@ -109,23 +141,34 @@ io.use(async (socket, next) => {
     next(new Error("Authentication error"));
   }
 }).on("connection", function(socket) {
+  console.log(`Socket connected: ${socket.id}`);
+  let { username } = socket.handshake.query;
+  if (!users[username]) {
+    users[username] = {
+      jointChannels: [],
+      sockets: []
+    };
+  }
+  socket.join(username);
+  users[username].sockets.push(socket.id);
+  socket.on("connected", function(data) {});
   socket.emit("channels", channels);
   const handleMessage = (channel, message) => {
     var data = { channel, ...JSON.parse(message) };
     socket.to(channel).broadcast.emit("message", data);
-    //socket.to(channel).emit("message", JSON.parse(message));
     console.log("handleMessage ==> ", channel, message);
-    //socket.emit("message", JSON.parse(message));
   };
 
   socket.on("joinChannel", async channel => {
-    socket.join(channel);
-    socket.emit("jointChannel", channel);
-
+    for (var index = 0; index < users[username].sockets.length; index++) {
+      let userSocket = users[username].sockets[index];
+      io.sockets.connected[userSocket].join(channel);
+    }
+    io.to(username).emit("jointChannel", channel);
     var oldMessages = await getOldMessages(channel);
     if (oldMessages.length > 0) {
       var messages = oldMessages.map(oldMessage => JSON.parse(oldMessage));
-      socket.emit("oldMessages", { channel, messages });
+      io.to(username).emit("oldMessages", { channel, messages });
     }
   });
 
@@ -135,8 +178,13 @@ io.use(async (socket, next) => {
     publishMessage(channel, JSON.stringify({ message, username }));
   });
 
-  socket.on("disconnected", function(data) {
-    redis.off("message", handleMessage);
+  socket.on("disconnect", function(data) {
+    console.log(`Socket disconnected: ${socket.id}`);
+    console.log(username);
+    //debugger;
+    users[username].sockets = users[username].sockets.filter(
+      s => s != socket.id
+    );
   });
 });
 
@@ -150,7 +198,7 @@ async function isAuthRequired(req, res, next) {
 async function isSessionValid(token, username) {
   if (!token || !username) return false;
   var redisSessionUsername = await getSession(token);
-  if (!redisSessionUsername || username != redisSessionUsername) return false;
+  if (!redisSessionUsername || username !== redisSessionUsername) return false;
   return true;
 }
 

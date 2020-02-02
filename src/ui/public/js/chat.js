@@ -1,5 +1,8 @@
-var socket = io();
-var username = getRandomUsername();
+var username = getUsername();
+var sessionToken = getSessionToken();
+var socket = io({
+  query: { token: sessionToken, username: username }
+});
 var allChannels = [];
 var jointChannels = [];
 var channelMessages = [];
@@ -27,6 +30,7 @@ socket.on("jointChannel", jointChannel => {
 });
 
 socket.on("channels", function(channels) {
+  $("#channels-to-join").html("");
   allChannels = channels;
   channels.forEach(channel => {
     var element = `
@@ -81,7 +85,9 @@ function sendMessage() {
   socket.emit("send", username, activeChannel, message);
 }
 
-function getRandomUsername() {
-  var userId = Math.floor(Math.random() * 100);
-  return `user${userId}`;
+function getUsername() {
+  return Cookies.get("username");
+}
+function getSessionToken() {
+  return Cookies.get("sessionToken");
 }

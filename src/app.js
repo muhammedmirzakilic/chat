@@ -5,7 +5,13 @@ import cookieParser from "cookie-parser";
 const app = express();
 import authRoutes from "./routes/auth";
 import chatRoutes from "./routes/chat";
-import { publishMessage, redis, chatRoomPrefix, redisStore } from "./lib/redis";
+import {
+  publishMessage,
+  redis,
+  chatRoomPrefix,
+  redisStore,
+  getSession
+} from "./lib/redis";
 var session = require("express-session");
 require("dotenv").config();
 
@@ -49,7 +55,7 @@ app.get("/", (req, res) => {
   res.send("Chat App");
 });
 
-app.get("/chat", (req, res) => {
+app.get("/chat", isAuthRequired, (req, res) => {
   res.sendFile(path.resolve(__dirname, "ui/views/chat.html"));
 });
 
@@ -89,7 +95,20 @@ const handleMessage = (_, channel, message) => {
 
 redis.on("pmessage", handleMessage);
 
-io.on("connection", function(socket) {
+io.use(async (socket, next) => {
+  if (socket.handshake.query && socket.handshake.query.token) {
+    let { token, username } = socket.handshake.query;
+    if (!isSessionValid(token, username)) {
+      next(new Error("Authentication error"));
+    } else {
+      next();
+    }
+  } else {
+    next(new Error("Authentication error"));
+  }
+}).on("connection", function(socket) {
+  console.log(socket);
+  debugger;
   socket.emit("channels", channels);
   const handleMessage = (channel, message) => {
     var data = { channel, ...JSON.parse(message) };
@@ -114,6 +133,20 @@ io.on("connection", function(socket) {
     redis.off("message", handleMessage);
   });
 });
+
+async function isAuthRequired(req, res, next) {
+  let { username, sessionToken } = req.session;
+  if (!isSessionValid(sessionToken, username))
+    return res.redirect("/auth/login");
+  next();
+}
+
+async function isSessionValid(token, username) {
+  if (!token || !username) return false;
+  var redisSessionUsername = await getSession(token);
+  if (!redisSessionUsername || username != redisSessionUsername) return false;
+  return true;
+}
 
 // app.listen(process.env.PORT || 3000, function() {
 //   console.log("Server started");
